@@ -3,6 +3,8 @@
 Problem 1 — Accumulator (stateful counter for AI pipelines)
 - Track a running sum without global variables.
 - Educate: @property (read-only) + guarded setter that blocks misuse.
+
+Credit: OpenAI 를 사용하여 Accumulator 클래스 설계 및 구현 아이디어를 참고하였습니다!
 """
 
 class Accumulator:
