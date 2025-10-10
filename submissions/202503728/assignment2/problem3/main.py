@@ -26,7 +26,7 @@ def merge_freqs(maps: list[dict[str, int]]) -> dict[str, int]:
     # TODO: 구현하세요 (선택사항)
     result = {}
     for b in maps:
-        for ket,value in b.items():
+        for key,value in b.items():
             result[key]=result.get(key,0)+value
     return result
 
