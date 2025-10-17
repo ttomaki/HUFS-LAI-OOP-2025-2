@@ -49,19 +49,55 @@ jobs:
       with:
         script: |
           const fs = require('fs');
-          const path = require('path');
 
           try {
-            const prDescription = fs.readFileSync('pr_description.md', 'utf8');
+            // Read the generated file tree
+            const fileTree = fs.readFileSync('pr_description.md', 'utf8');
+
+            // Get current PR body
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const currentBody = pr.body || '';
+
+            // Check if file tree section already exists
+            const fileTreeMarker = '<!-- AUTO-GENERATED-FILE-TREE -->';
+            const fileTreeStart = `${fileTreeMarker}\n## Changed Files\n\n`;
+            const fileTreeEnd = `\n<!-- END-AUTO-GENERATED-FILE-TREE -->`;
+
+            let updatedBody;
+
+            if (currentBody.includes(fileTreeMarker)) {
+              // Replace existing file tree section
+              const startIdx = currentBody.indexOf(fileTreeMarker);
+              const endIdx = currentBody.indexOf('<!-- END-AUTO-GENERATED-FILE-TREE -->');
+
+              if (endIdx !== -1) {
+                updatedBody = currentBody.substring(0, startIdx) +
+                             fileTreeStart +
+                             fileTree +
+                             fileTreeEnd +
+                             currentBody.substring(endIdx + '<!-- END-AUTO-GENERATED-FILE-TREE -->'.length);
+              } else {
+                // Malformed, append at end
+                updatedBody = currentBody + '\n\n' + fileTreeStart + fileTree + fileTreeEnd;
+              }
+            } else {
+              // Append file tree section at the beginning
+              updatedBody = fileTreeStart + fileTree + fileTreeEnd + '\n\n' + currentBody;
+            }
 
             await github.rest.pulls.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
-              body: prDescription
+              body: updatedBody
             });
 
-            console.log('✅ PR description updated successfully');
+            console.log('✅ PR description updated successfully (preserved user content)');
           } catch (error) {
             console.log('⚠️ Could not update PR description:', error.message);
           }
